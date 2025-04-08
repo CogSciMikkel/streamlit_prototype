@@ -1,6 +1,6 @@
 import streamlit as st
 import datetime
-from log_data2 import display_log_form
+from create_entry import display_create_entry
 from view_data import display_reports
 
 #Page configuration
@@ -77,38 +77,49 @@ def display_login():
         if st.button("Create Account", use_container_width=True):
             st.info("Account creation would be implemented here")
 
+# Bottom navigation bar
 def bottom_navigation():
     current_page = st.session_state.page
     
+    # Set active classes for the buttons based on the current page
     home_active = "active" if current_page == "home" else ""
     create_active = "active" if current_page == "create_entry" else ""
     reports_active = "active" if current_page == "reports" else ""
     
-    bottom_nav_html = f"""
+    # Render bottom navigation buttons and handle navigation through Streamlit
+    st.markdown(f"""
     <div class="bottom-nav">
-        <div class="nav-button {home_active}" onclick="window.location.href='/?home'">Home</div>
-        <div class="nav-button {create_active}" onclick="window.location.href='/?create_entry'">Create Entry</div>
-        <div class="nav-button {reports_active}" onclick="window.location.href='/?reports'">Reports</div>
+        <div class="nav-button {home_active}" onclick="window.location.href='/?page=home'">Home</div>
+        <div class="nav-button {create_active}" onclick="window.location.href='/?page=create_entry'">Create Entry</div>
+        <div class="nav-button {reports_active}" onclick="window.location.href='/?page=reports'">Reports</div>
     </div>
-    """
-    
-    # Render the bottom navigation bar
-    st.markdown(bottom_nav_html, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
+
+    # Handle button clicks via session state
+    if st.session_state.page == "home":
+        go_to_page("home")
+    elif st.session_state.page == "create_entry":
+        display_log_form()
+    elif st.session_state.page == "reports":
+        display_reports()
 
 # Home page
 def display_home():
-    # Container for main content with padding for bottom nav
-    with st.container():
-        st.markdown('<div class="main-content">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1, 2, 1])  # This will center the content
 
-        # Whatever we want displayed 
-        st.subheader("Something relevant")
+    with col2:
+        greeting = get_greeting()
+        st.markdown(f"<h3>{greeting}, {st.session_state.username}!</h3>", unsafe_allow_html=True)
 
-        if st.button("Create Entry"):
+        st.markdown(f"<h3>Calendar</h3>", unsafe_allow_html=True)
+
+        st.markdown(f"<h3>Something relevant</h3>", unsafe_allow_html=True)
+
+        if st.button("Create Entry", use_container_width=True):
             st.session_state.page = "create_entry"
-            st.experimental_rerun() 
+            st.rerun() 
 
-        st.markdown('</div>', unsafe_allow_html=True)
+
 
 def display_profile():
     st.write("Profile page coming soon")
@@ -131,15 +142,11 @@ def main():
     if not st.session_state.logged_in:
         display_login()
     else:
-        
-        greeting = get_greeting()
-        st.subheader(f"{greeting}, {st.session_state.username}!")
-        
         # Display the current page
         if st.session_state.page == "home":
             display_home()
         elif st.session_state.page == "create_entry":
-            display_log_form()  # Call the function from log_data.py
+            display_create_entry()
         elif st.session_state.page == "reports":
             display_reports()
         elif st.session_state.page == "profile":

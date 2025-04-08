@@ -78,15 +78,6 @@ def display_log_form():
         else:
             df.to_csv(filename, index=False)
 
-            
-    def save_submission(data: dict, filename="pain_log.csv"):
-        df = pd.DataFrame([data])  # one-row dataframe
-        if os.path.exists(filename):
-            df.to_csv(filename, mode='a', header=False, index=False)
-        else:
-            df.to_csv(filename, index=False)
-
-
     # Title + Date
     st.title("🩺 Log your pain")
     today = pd.Timestamp.today()
@@ -120,68 +111,7 @@ def display_log_form():
                 "bpi9g": 0,
             }
             st.success("✅ Your no-pain report was submitted.")
-
-    else:
-        # Body map
-        bpi2 = st.multiselect(
-            "Please select the area(s) of your body that hurt(s) the most",
-            options=["Head", "Neck", "Shoulder", "Arm", "Hand",
-                     "Back", "Chest", "Abdomen", "Hip", "Leg", "Foot"]
-        )
-
-        # Pain ratings
-        st.subheader("Please rate your pain in the past 24 hours")
-        bpi3 = bpi_question(
-            "Your pain at its worst", get_pain_options())
-        bpi4 = bpi_question(
-            "Your pain at its least", get_pain_options())
-        bpi5 = bpi_question("Your pain on average", get_pain_options())
-        bpi6 = bpi_question("Your pain right now", get_pain_options())
-
-
-        captions_pain = ["No pain", "", "", "", "", "", "",
-                        "", "", "", "Pain as bad as you can imagine"]
-        captions_relief = ["No relief", "", "", "", "", "", "",
-                        "", "", "", "Complete relief"]
-        captions_interference = ["Does not interfere", "", "", "", "", "", "",
-                                "", "", "", "Completely interferes"]
-
-        bpi7_intro = st.radio(
-            "Are you using any treatments or meds for your pain?",
-            options=['No', 'Yes'],
-            horizontal=True
-        )
-
-        # Initialize bpi7 and bpi8 to avoid undefined variables error
-        bpi7 = ""
-        bpi8 = "0 %"
-
-        if bpi7_intro == "Yes":
-            bpi7 = st.text_input(
-                "What pain treatments or meds are you using?",
-                placeholder="e.g. paracetamol, physical therapy, meditation",
-                max_chars=100
-            )
-
-            if bpi7:
-                bpi8 = bpi_question(
-                    "How much relief have your pain treatments/meds given in the past 24 hours?", get_relief_options())
-
-        st.divider()
-
-        st.subheader(
-            "In the past 24 hours, how much has pain interfered with your...")
-
-        bpi9a = bpi_question("general activity?", get_interference_options())
-        bpi9b = bpi_question("mood?", get_interference_options())
-        bpi9c = bpi_question("walking?", get_interference_options())
-        bpi9d = bpi_question("normal work (incl. housework)?",
-                             get_interference_options())
-        bpi9e = bpi_question("relations with other people?",
-                             get_interference_options())
-        bpi9f = bpi_question("sleep?", get_interference_options())
-        bpi9g = bpi_question("enjoyment of life?", get_interference_options())
-
+            
     else:
         # Show full form dynamically
         st.subheader("Please answer the following about your pain today:")
