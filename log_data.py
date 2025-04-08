@@ -6,7 +6,7 @@ def bpi_question(label: str, captions: list, index: int = None) -> int:
     return st.radio(
         label=label,
         options=range(11),
-        horizontal=True,
+        horizontal=False,
         captions=captions,
         index=index
     )
@@ -18,6 +18,8 @@ captions_relief = ["No relief", "", "", "", "", "", "",
                    "", "", "", "Complete relief"]
 captions_interference = ["Does not interfere", "", "", "", "", "", "",
                          "", "", "", "Completely interferes"]
+
+st.title("🩺 Log your pain")
 
 with st.form("daily_pain_form"):
     # Date input - by default, today's date
@@ -61,13 +63,32 @@ with st.form("daily_pain_form"):
 
     st.divider()
 
-# bpi7 is "What treatments or medications are you receiving for your pain?"
+    # bpi7 intro: Are you receiving any treatments or medications for your pain?
+    bpi7_intro = st.radio(
+        "Are you receiving any treatments or medications for your pain?",
+        options=['No', 'Yes'],
+        horizontal=True,
+        index=0
+    )
 
-    bpi8 = st.radio("In the last 24 hours, how much relief have pain treatments or medications provided? Please mark the box below the percentage that most shows how much relief you have received",
-                    options=[f"{x * 10} %" for x in range(11)],
-                    horizontal=True,
-                    captions=captions_relief,
-                    index=None)
+    bpi7 = None  # Initialize bpi7 to None to avoid reference before assignment error
+
+    # bpi7 is "What treatments or medications are you receiving for your pain?" as a text input of max 100 characters
+    # Only show bpi7 if bpi7_intro is "Yes"
+    if bpi7_intro == 'Yes':
+        bpi7 = st.text_input(
+            "What treatments or medications are you receiving for your pain?",
+            placeholder="e.g. Paracetamol, physical therapy, meditation, etc.",
+            max_chars=100
+        )
+
+   # Only show bpi8 if bpi7 is not empty
+    if bpi7:
+        bpi8 = st.radio("In the last 24 hours, how much relief have pain treatments or medications provided? Please mark the box below the percentage that most shows how much relief you have received",
+                        options=[f"{x * 10} %" for x in range(11)],
+                        horizontal=True,
+                        captions=captions_relief,
+                        index=None)
 
     st.divider()
 

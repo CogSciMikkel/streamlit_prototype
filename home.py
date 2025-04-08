@@ -28,6 +28,11 @@ logout_page = st.Page(logout, title="Log out", icon=":material/logout:")
 
 log_data = st.Page("log_data.py", title="Log your pain",
                    icon=":material/insert_chart_outlined:")
+
+log_data2 = st.Page("log_data2.py", title="Log your pain (2nd test)",
+                    icon=":material/insert_chart_outlined:")
+
+
 view_data = st.Page("view_data.py", title="View your pain data",
                     icon=":material/visibility:")
 
@@ -35,7 +40,7 @@ view_data = st.Page("view_data.py", title="View your pain data",
 if st.session_state.logged_in:
     pg = st.navigation(
         {
-            "Your Pain": [log_data, view_data],
+            "Your Pain": [log_data, log_data2, view_data],
             "Account": [logout_page],
 
         }
