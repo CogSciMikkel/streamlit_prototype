@@ -99,7 +99,7 @@ def bottom_navigation():
     if st.session_state.page == "home":
         go_to_page("home")
     elif st.session_state.page == "create_entry":
-        display_log_form()
+        display_create_entry()
     elif st.session_state.page == "reports":
         display_reports()
 
