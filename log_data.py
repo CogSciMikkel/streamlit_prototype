@@ -19,7 +19,7 @@ captions_relief = ["No relief", "", "", "", "", "", "",
 captions_interference = ["Does not interfere", "", "", "", "", "", "",
                          "", "", "", "Completely interferes"]
 
-st.title("🩺 Log your pain")
+st.title("OUTDATED")
 
 with st.form("daily_pain_form"):
     # Date input - by default, today's date
