@@ -57,6 +57,42 @@ def get_greeting():
     else:
         return "Good evening"
 
+def display_calendar():
+    today = datetime.date.today()
+    selected_date = st.session_state.get("selected_date", today)
+
+    offset = st.session_state.get("calendar_offset", 0)
+    base_date = today + datetime.timedelta(days=offset)
+
+    days = [base_date + datetime.timedelta(days=i - 2) for i in range(5)]
+
+    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
+
+    with col1:
+        if st.button("←", key="prev", use_container_width=True):
+            st.session_state["calendar_offset"] = offset - 1
+            st.rerun()
+
+    for i, day in enumerate(days):
+        day_name = day.strftime("%a")
+        day_num = day.strftime("%-d")
+        btn_class = "calendar-btn"
+        if day == selected_date:
+            btn_class += " calendar-btn-selected"
+        with [col2, col3, col4, col5, col6][i]:
+            if st.button(f"{day_name}\n{day_num}", key=f"day_{i}"):
+                st.session_state.selected_date = day
+                st.rerun()
+
+    with col7:
+        if st.button("→", key="next", use_container_width=True):
+            st.session_state["calendar_offset"] = offset + 1
+            st.rerun()
+
+    # Display selected date
+    selected = st.session_state.selected_date
+    st.markdown(f"<div style='text-align:center; margin-top:10px;'>"
+                f"<b>{selected.strftime('%A, %d %B %Y')}</b></div>", unsafe_allow_html=True)
 
 # Navigation
 def display_login():
@@ -81,27 +117,28 @@ def display_login():
 def bottom_navigation():
     current_page = st.session_state.page
     
-    # Set active classes for the buttons based on the current page
-    home_active = "active" if current_page == "home" else ""
-    create_active = "active" if current_page == "create_entry" else ""
-    reports_active = "active" if current_page == "reports" else ""
+    col1, col2, col3 = st.columns(3)
     
-    # Render bottom navigation buttons and handle navigation through Streamlit
-    st.markdown(f"""
-    <div class="bottom-nav">
-        <div class="nav-button {home_active}" onclick="window.location.href='/?page=home'">Home</div>
-        <div class="nav-button {create_active}" onclick="window.location.href='/?page=create_entry'">Create Entry</div>
-        <div class="nav-button {reports_active}" onclick="window.location.href='/?page=reports'">Reports</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Handle button clicks via session state
-    if st.session_state.page == "home":
-        go_to_page("home")
-    elif st.session_state.page == "create_entry":
-        display_log_form()
-    elif st.session_state.page == "reports":
-        display_reports()
+    with col1:
+        if st.button("Home", use_container_width=True, 
+                    type="primary" if current_page == "home" else "secondary",
+                    key="nav_home"):  # Add unique key
+            st.session_state.page = "home"
+            st.rerun()
+            
+    with col2:
+        if st.button("Create Entry", use_container_width=True,
+                    type="primary" if current_page == "create_entry" else "secondary",
+                    key="nav_create"):  # Add unique key
+            st.session_state.page = "create_entry"
+            st.rerun()
+            
+    with col3:
+        if st.button("Reports", use_container_width=True,
+                    type="primary" if current_page == "reports" else "secondary",
+                    key="nav_reports"):  # Add unique key
+            st.session_state.page = "reports"
+            st.rerun()
 
 # Home page
 def display_home():
@@ -111,32 +148,22 @@ def display_home():
         greeting = get_greeting()
         st.markdown(f"<h3>{greeting}, {st.session_state.username}!</h3>", unsafe_allow_html=True)
 
-        st.markdown(f"<h3>Calendar</h3>", unsafe_allow_html=True)
+        display_calendar()
 
         st.markdown(f"<h3>Something relevant</h3>", unsafe_allow_html=True)
-
-        if st.button("Create Entry", use_container_width=True):
-            st.session_state.page = "create_entry"
-            st.rerun() 
-
 
 
 def display_profile():
     st.write("Profile page coming soon")
 
 def main():
-    # Load external CSS
     load_css("styles.css")
     
     query_params = st.query_params
-    if "home" in query_params:
-        st.session_state.page = "home"
-    elif "create_entry" in query_params:
-        st.session_state.page = "create_entry"
-    elif "reports" in query_params:
-        st.session_state.page = "reports"
-    elif "profile" in query_params:
-        st.session_state.page = "profile"
+    if "page" in query_params:
+        page = query_params["page"]
+        if page in ["home", "create_entry", "reports", "profile"]:
+            st.session_state.page = page
     
  # Display the appropriate page
     if not st.session_state.logged_in:
@@ -152,7 +179,7 @@ def main():
         elif st.session_state.page == "profile":
             display_profile()
     
-    bottom_navigation()
+        bottom_navigation()
 
 # Run the app
 if __name__ == "__main__":

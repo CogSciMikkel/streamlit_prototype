@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-def display_log_form():
+def display_create_entry():
     
     def bpi_question(label: str, captions: list, index: int = None) -> int:
         return st.radio(
