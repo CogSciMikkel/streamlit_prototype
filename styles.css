@@ -47,3 +47,34 @@
     background-color: #a3a3a3;
     color: white;
 }
+
+/* Calendar Style */
+.calendar-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.calendar-btn {
+    background-color: #f5f5f5;
+    color: #333;
+    border: none;
+    padding: 12px;
+    margin: 4px;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    min-width: 65px;
+    display: inline-block;
+    font-size: 14px;
+    white-space: pre-line;
+    transition: background-color 0.2s ease;
+}
+
+.calendar-btn-selected {
+    background-color: #b0b0b0;
+    color: black;
+    font-weight: bold;
+}

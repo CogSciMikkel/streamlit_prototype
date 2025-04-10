@@ -2,18 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 
+
 def display_create_entry():
-    
-    def bpi_question(label: str, captions: list, index: int = None) -> int:
-        return st.radio(
-            label=label,
-            options=range(11),
-            horizontal=False,
-            captions=captions,
-            index=index
-        )
-      
-      
     def get_pain_options():
         return [
             "✅ 0 - No pain",
@@ -28,7 +18,6 @@ def display_create_entry():
             "🔴 9",
             "🚫 10 - Worst imaginable pain"
         ]
-
 
     def get_relief_options():
         return [
@@ -45,7 +34,6 @@ def display_create_entry():
             "🚫 0 % - No relief"
         ]
 
-
     def get_interference_options():
         return [
             "✅ 0 - Has not interfered",
@@ -60,7 +48,6 @@ def display_create_entry():
             "🔴 9",
             "🚫 10 - Has interfered completely"
         ]
-
 
     def bpi_question(label: str = "Question Placeholder", options: list = range(11), index: int = None) -> int:
         return st.selectbox(
@@ -111,31 +98,28 @@ def display_create_entry():
                 "bpi9g": 0,
             }
             st.success("✅ Your no-pain report was submitted.")
-            
-    else:
-        # Show full form dynamically
-        st.subheader("Please answer the following about your pain today:")
 
+    else:
         # Body map
         bpi2 = st.multiselect(
-            "Please select the areas of your body that hurts the most",
-            options=["Head", "Neck", "Shoulder", "Back",
-                    "Chest", "Abdomen", "Hip", "Leg", "Arm"]
+            "Please select the area(s) of your body that hurt(s) the most",
+            options=["Head", "Neck", "Shoulder", "Arm", "Hand",
+                     "Back", "Chest", "Abdomen", "Hip", "Leg", "Foot"]
         )
 
         # Pain ratings
         st.subheader("Please rate your pain in the past 24 hours")
         bpi3 = bpi_question(
-            "Your pain at its worst", captions_pain)
+            "Your pain at its worst", get_pain_options())
         bpi4 = bpi_question(
-            "Your pain at its least", captions_pain)
-        bpi5 = bpi_question("Your pain on average", captions_pain)
-        bpi6 = bpi_question("Your pain right now", captions_pain)
+            "Your pain at its least", get_pain_options())
+        bpi5 = bpi_question("Your pain on average", get_pain_options())
+        bpi6 = bpi_question("Your pain right now", get_pain_options())
 
         st.divider()
 
         bpi7_intro = st.radio(
-            "Are you receiving any treatments or medications for your pain?",
+            "Are you using any treatments or meds for your pain?",
             options=['No', 'Yes'],
             horizontal=True
         )
@@ -146,26 +130,29 @@ def display_create_entry():
 
         if bpi7_intro == "Yes":
             bpi7 = st.text_input(
-                "What treatments or medications are you receiving?",
-                placeholder="e.g. Paracetamol, physical therapy, meditation",
+                "What pain treatments or meds are you using?",
+                placeholder="e.g. paracetamol, physical therapy, meditation",
                 max_chars=100
             )
+
             if bpi7:
-                bpi8 = st.radio("How much relief have treatments provided (past 24h)?",
-                                options=[f"{x * 10} %" for x in range(11)],
-                                horizontal=True,
-                                captions=captions_relief)
+                bpi8 = bpi_question(
+                    "How much relief have your pain treatments/meds given in the past 24 hours?", get_relief_options())
 
         st.divider()
-        st.write("Pain interference with activities (past 24h):")
 
-        bpi9a = bpi_question("General activity", captions_interference)
-        bpi9b = bpi_question("Mood", captions_interference)
-        bpi9c = bpi_question("Walking ability", captions_interference)
-        bpi9d = bpi_question("Normal work", captions_interference)
-        bpi9e = bpi_question("Relations with other people", captions_interference)
-        bpi9f = bpi_question("Sleep", captions_interference)
-        bpi9g = bpi_question("Enjoyment of life", captions_interference)
+        st.subheader(
+            "In the past 24 hours, how much has pain interfered with your...")
+
+        bpi9a = bpi_question("general activity?", get_interference_options())
+        bpi9b = bpi_question("mood?", get_interference_options())
+        bpi9c = bpi_question("walking?", get_interference_options())
+        bpi9d = bpi_question("normal work (incl. housework)?",
+                             get_interference_options())
+        bpi9e = bpi_question("relations with other people?",
+                             get_interference_options())
+        bpi9f = bpi_question("sleep?", get_interference_options())
+        bpi9g = bpi_question("enjoyment of life?", get_interference_options())
 
         st.divider()
 
