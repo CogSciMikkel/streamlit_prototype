@@ -48,33 +48,54 @@
     color: white;
 }
 
-/* Calendar Style */
-.calendar-container {
+/* Calendar */
+.scrollable-calendar {
     display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 10px;
-    flex-wrap: wrap;
+    overflow-x: auto;
+    gap: 10px;
+    padding: 10px 0;
+    white-space: nowrap;
+    scrollbar-width: none; /* Firefox */
 }
 
-.calendar-btn {
-    background-color: #f5f5f5;
-    color: #333;
-    border: none;
-    padding: 12px;
-    margin: 4px;
-    border-radius: 10px;
-    text-align: center;
-    cursor: pointer;
-    min-width: 65px;
-    display: inline-block;
+.scrollable-calendar::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+.calendar-day {
+    flex: 0 0 auto;
+    padding: 8px 16px;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 12px;
     font-size: 14px;
-    white-space: pre-line;
+    cursor: pointer;
+}
+
+.scrollable-calendar button {
+    min-width: 70px;
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: none;
+    background-color: #f1f1f1;
+    color: #333;
+    font-size: 14px;
+    flex-shrink: 0;
+    white-space: nowrap;
+    cursor: pointer;
     transition: background-color 0.2s ease;
 }
 
-.calendar-btn-selected {
-    background-color: #b0b0b0;
-    color: black;
+.scrollable-calendar button:hover {
+    background-color: #e0e0e0;
+}
+
+.scrollable-calendar .today {
+    border: 2px solid #ff8c42;
+}
+
+.scrollable-calendar .selected {
+    background-color: #ff8c42;
+    color: white;
     font-weight: bold;
 }

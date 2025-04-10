@@ -1,8 +1,8 @@
-from view_data import display_reports
 from create_entry import display_create_entry
-import platform
+from report import display_reports
 import datetime
 import streamlit as st
+import platform
 
 # Page configuration
 st.set_page_config(
@@ -76,39 +76,49 @@ def get_greeting():
 def display_calendar():
     today = datetime.date.today()
     selected_date = st.session_state.get("selected_date", today)
-
     offset = st.session_state.get("calendar_offset", 0)
     base_date = today + datetime.timedelta(days=offset)
 
-    days = [base_date + datetime.timedelta(days=i - 2) for i in range(5)]
+    days = [base_date + datetime.timedelta(days=i - 2) for i in range(7)]
 
-    col1, col2, col3, col4, col5, col6, col7 = st.columns(7)
-
-    with col1:
-        if st.button("←", key="prev", use_container_width=True):
-            st.session_state["calendar_offset"] = offset - 1
-            st.rerun()
+    calendar_html = "<div class='scrollable-calendar'>"
 
     for i, day in enumerate(days):
-        day_name = day.strftime("%a")
-        day_num = get_day_num(day)
-        btn_class = "calendar-btn"
-        if day == selected_date:
-            btn_class += " calendar-btn-selected"
-        with [col2, col3, col4, col5, col6][i]:
-            if st.button(f"{day_name}\n{day_num}", key=f"day_{i}"):
-                st.session_state.selected_date = day
-                st.rerun()
+        day_str = day.strftime("%a %d")
+        is_today = day == today
+        is_selected = day == selected_date
 
-    with col7:
-        if st.button("→", key="next", use_container_width=True):
-            st.session_state["calendar_offset"] = offset + 1
+        classes = "calendar-day"
+        if is_today:
+            classes += " today"
+        if is_selected:
+            classes += " selected"
+
+        # Add a query param to track the click
+        calendar_html += (
+            f"<form action='?day={day.isoformat()}' method='post' style='display:inline;'>"
+            f"<button class='{classes}' type='submit'>{day_str}</button>"
+            "</form>"
+        )
+
+    calendar_html += "</div>"
+    st.markdown(calendar_html, unsafe_allow_html=True)
+
+    # Use st.query_params instead of experimental API
+    if "day" in st.query_params:
+        try:
+            new_day = datetime.date.fromisoformat(st.query_params["day"])
+            st.session_state.selected_date = new_day
+            st.query_params.clear()  # clear the param to avoid repeated reruns
             st.rerun()
+        except Exception:
+            pass
 
-    # Display selected date
-    selected = st.session_state.selected_date
-    st.markdown(f"<div style='text-align:center; margin-top:10px;'>"
-                f"<b>{selected.strftime('%A, %d %B %Y')}</b></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div style='text-align:center; margin-top:10px;'>"
+        f"<b>{selected_date.strftime('%A, %d %B %Y')}</b></div>",
+        unsafe_allow_html=True
+    )
 
 # Navigation
 
