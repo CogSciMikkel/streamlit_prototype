@@ -1,15 +1,26 @@
-import streamlit as st
-import datetime
-from create_entry import display_create_entry
 from view_data import display_reports
+from create_entry import display_create_entry
+import platform
+import datetime
+import streamlit as st
 
-#Page configuration
+# Page configuration
 st.set_page_config(
-    page_title = "Pain tracker",
-    page_icon = ":pill:",
-    layout = "wide",
+    page_title="Pain tracker",
+    page_icon=":pill:",
+    layout="wide",
     initial_sidebar_state="collapsed"
 )
+
+
+# To fix the issue with the day number formatting on Windows
+
+def get_day_num(day):
+    if platform.system() == "Windows":
+        return day.strftime("%#d")
+    else:
+        return day.strftime("%-d")
+
 
 def load_css(file_name):
     with open(file_name) as f:
@@ -25,6 +36,8 @@ if "selected_date" not in st.session_state:
     st.session_state.selected_date = datetime.datetime.now()
 
 # Navigation functions
+
+
 def go_to_page(page):
     st.session_state.page = page
     st.rerun()
@@ -42,11 +55,13 @@ def authenticate(username, password):
     else:
         st.error("Please enter both username and password")
 
+
 def logout():
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.page = "login"
     st.rerun()
+
 
 def get_greeting():
     current_hour = datetime.datetime.now().hour
@@ -56,6 +71,7 @@ def get_greeting():
         return "Good afternoon"
     else:
         return "Good evening"
+
 
 def display_calendar():
     today = datetime.date.today()
@@ -75,7 +91,7 @@ def display_calendar():
 
     for i, day in enumerate(days):
         day_name = day.strftime("%a")
-        day_num = day.strftime("%-d")
+        day_num = get_day_num(day)
         btn_class = "calendar-btn"
         if day == selected_date:
             btn_class += " calendar-btn-selected"
@@ -95,16 +111,18 @@ def display_calendar():
                 f"<b>{selected.strftime('%A, %d %B %Y')}</b></div>", unsafe_allow_html=True)
 
 # Navigation
+
+
 def display_login():
 
-    col1, col2, col3 = st.columns([1, 2, 1]) # Centering login
+    col1, col2, col3 = st.columns([1, 2, 1])  # Centering login
 
-    with col2: 
+    with col2:
         st.title("Pain Tracker")
         st.subheader("Please login")
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
-    
+
     col1, col2 = st.columns(2)
     with col1:
         if st.button("Login", use_container_width=True):
@@ -114,39 +132,44 @@ def display_login():
             st.info("Account creation would be implemented here")
 
 # Bottom navigation bar
+
+
 def bottom_navigation():
     current_page = st.session_state.page
-    
+
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
-        if st.button("Home", use_container_width=True, 
-                    type="primary" if current_page == "home" else "secondary",
-                    key="nav_home"):  # Add unique key
+        if st.button("Home", use_container_width=True,
+                     type="primary" if current_page == "home" else "secondary",
+                     key="nav_home"):  # Add unique key
             st.session_state.page = "home"
             st.rerun()
-            
+
     with col2:
         if st.button("Create Entry", use_container_width=True,
-                    type="primary" if current_page == "create_entry" else "secondary",
-                    key="nav_create"):  # Add unique key
+                     type="primary" if current_page == "create_entry" else "secondary",
+                     key="nav_create"):  # Add unique key
             st.session_state.page = "create_entry"
             st.rerun()
-            
+
     with col3:
         if st.button("Reports", use_container_width=True,
-                    type="primary" if current_page == "reports" else "secondary",
-                    key="nav_reports"):  # Add unique key
+                     type="primary" if current_page == "reports" else "secondary",
+                     key="nav_reports"):  # Add unique key
             st.session_state.page = "reports"
             st.rerun()
 
 # Home page
+
+
 def display_home():
     col1, col2, col3 = st.columns([1, 2, 1])  # This will center the content
 
     with col2:
         greeting = get_greeting()
-        st.markdown(f"<h3>{greeting}, {st.session_state.username}!</h3>", unsafe_allow_html=True)
+        st.markdown(
+            f"<h3>{greeting}, {st.session_state.username}!</h3>", unsafe_allow_html=True)
 
         display_calendar()
 
@@ -156,15 +179,16 @@ def display_home():
 def display_profile():
     st.write("Profile page coming soon")
 
+
 def main():
     load_css("styles.css")
-    
+
     query_params = st.query_params
     if "page" in query_params:
         page = query_params["page"]
         if page in ["home", "create_entry", "reports", "profile"]:
             st.session_state.page = page
-    
+
  # Display the appropriate page
     if not st.session_state.logged_in:
         display_login()
@@ -178,8 +202,9 @@ def main():
             display_reports()
         elif st.session_state.page == "profile":
             display_profile()
-    
+
         bottom_navigation()
+
 
 # Run the app
 if __name__ == "__main__":
