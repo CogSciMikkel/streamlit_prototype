@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
+import re
 
 
 def display_create_entry():
@@ -57,6 +58,13 @@ def display_create_entry():
             # captions=captions,
             index=index
         )
+
+    def extract_number(value):
+        if isinstance(value, str):
+            match = re.search(r'\d+', value)
+            if match:
+                return int(match.group())
+        return value
 
     def save_submission(data: dict, filename="pain_log.csv"):
         df = pd.DataFrame([data])  # one-row dataframe
@@ -160,19 +168,20 @@ def display_create_entry():
             data = {
                 "date": date,
                 "bpi1": bpi1,
-                "bpi3": bpi3,
-                "bpi4": bpi4,
-                "bpi5": bpi5,
-                "bpi6": bpi6,
+                "bpi2": ", ".join(bpi2),
+                "bpi3": extract_number(bpi3),
+                "bpi4": extract_number(bpi4),
+                "bpi5": extract_number(bpi5),
+                "bpi6": extract_number(bpi6),
                 "bpi7": bpi7,
-                "bpi8": bpi8,
-                "bpi9a": bpi9a,
-                "bpi9b": bpi9b,
-                "bpi9c": bpi9c,
-                "bpi9d": bpi9d,
-                "bpi9e": bpi9e,
-                "bpi9f": bpi9f,
-                "bpi9g": bpi9g,
+                "bpi8": extract_number(bpi8),
+                "bpi9a": extract_number(bpi9a),
+                "bpi9b": extract_number(bpi9b),
+                "bpi9c": extract_number(bpi9c),
+                "bpi9d": extract_number(bpi9d),
+                "bpi9e": extract_number(bpi9e),
+                "bpi9f": extract_number(bpi9f),
+                "bpi9g": extract_number(bpi9g),
             }
             save_submission(data)
             # Display the submitted data for confirmation
