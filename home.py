@@ -2,6 +2,7 @@ from create_entry import display_create_entry
 from report import display_reports
 import datetime
 import streamlit as st
+import platform
 
 # Page configuration
 st.set_page_config(
