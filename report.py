@@ -1,5 +1,4 @@
 import streamlit as st
-import datetime
 import pandas as pd
 import plotly.express as px
 import altair as alt
@@ -7,7 +6,7 @@ import os
 
 
 def display_reports():
-    st.title("📊 Pain Report Dashboard")
+    st.title("Your Pain Report")
 
     # Load CSV
     csv_file = "pain_log.csv"
@@ -26,11 +25,27 @@ def display_reports():
     df = df.sort_values("date")
 
     # Data frame for display - should be removed in the final version
-    st.subheader(
-        "🗂 Logged Pain Data (I DON'T THINK THIS SHOULD BE AT THE TOP IN THE FINAL VERSION)")
-    st.dataframe(df, use_container_width=True)
+    # st.subheader(
+    #     "🗂 Logged Pain Data (I DON'T THINK THIS SHOULD BE AT THE TOP IN THE FINAL VERSION)")
+    # st.dataframe(df, use_container_width=True)
 
     st.divider()
+    # Choose time range
+    range_option = st.radio(
+        "Select time range",
+        ["Last 7 days", "Last month", "Last year", "All time"],
+        horizontal=True
+    )
+
+    # Choose period
+    if range_option == "Last 7 days":
+        period = "Weekly"
+    elif range_option == "Last month":
+        period = "Monthly"
+    elif range_option == "Last year":
+        period = "Yearly"
+    else:
+        period = "All Time"
 
     # Date filter
     if df['date'].dropna().empty:
@@ -44,90 +59,109 @@ def display_reports():
             min_date = pd.Timestamp("2022-01-01")
             max_date = pd.Timestamp("2022-12-31")
 
-    date_range = st.sidebar.date_input(
-        "Select date range", [min_date, max_date])
-
-    # Filter based on selection
-    if len(date_range) == 2:
-        df_filtered = df[(df["date"] >= pd.to_datetime(date_range[0])) &
-                         (df["date"] <= pd.to_datetime(date_range[1]))]
-    else:
-        df_filtered = df
+    df_filtered = df.copy()
 
     # --- Display metrics ---
+    st.subheader(f"📊 {period} Pain Comparison")
+
     # Average pain this week vs last week
     # Define current and previous week ranges
     today = pd.Timestamp.today().normalize()
-    start_of_this_week = today - pd.Timedelta(days=today.weekday())  # Monday
-    start_of_last_week = start_of_this_week - pd.Timedelta(weeks=1)
-    end_of_last_week = start_of_this_week - pd.Timedelta(days=1)
+    if range_option == "Last 7 days":
+        this_start = today - pd.Timedelta(days=6)
+        last_start = this_start - pd.Timedelta(days=7)
+        last_end = this_start - pd.Timedelta(days=1)
+    elif range_option == "Last month":
+        this_start = today - pd.DateOffset(days=30)
+        last_start = this_start - pd.DateOffset(days=30)
+        last_end = this_start - pd.Timedelta(days=1)
+    elif range_option == "Last year":
+        this_start = today - pd.DateOffset(years=1)
+        last_start = this_start - pd.DateOffset(years=1)
+        last_end = this_start - pd.Timedelta(days=1)
+    else:  # All time
+        this_start = df["date"].min()
+        last_start = None  # skip comparison
+        last_end = None
 
     # Filter data for each week
-    this_week_df = df_filtered[(df_filtered["date"] >= start_of_this_week) & (
-        df_filtered["date"] <= today)]
-    last_week_df = df_filtered[(df_filtered["date"] >= start_of_last_week) & (
-        df_filtered["date"] <= end_of_last_week)]
+    this_period_df = df[(df["date"] >= this_start) & (df["date"] <= today)]
+
+    if last_start is not None and last_end is not None:
+        last_period_df = df[(df["date"] >= last_start)
+                            & (df["date"] <= last_end)]
+    else:
+        last_period_df = pd.DataFrame(columns=df.columns)
 
     # Compute average bpi5
-    mean_this_week = this_week_df["bpi5"].mean()
-    mean_last_week = last_week_df["bpi5"].mean()
+    mean_this_period = this_period_df["bpi5"].mean()
+    mean_last_period = last_period_df["bpi5"].mean()
 
     # Compute delta (change from last week)
-    if pd.notna(mean_this_week) and pd.notna(mean_last_week):
-        delta = mean_this_week - mean_last_week
+    if pd.notna(mean_this_period) and pd.notna(mean_last_period):
+        delta = mean_this_period - mean_last_period
     else:
-        delta = None  # Show no delta if data is missing
+        delta = None
 
     # Most painful area this week compared to last week
     # Get the most painful area for this week and last week based on strings in bpi2
-    this_week_areas = this_week_df["bpi2"].dropna(
-    ).str.split(",").explode().str.strip()
-    last_week_areas = last_week_df["bpi2"].dropna(
-    ).str.split(",").explode().str.strip()
+    from collections import Counter
+
+    def get_most_common_word(series):
+        # Flatten list of strings -> individual words
+        all_words = []
+        for entry in series.dropna():
+            if isinstance(entry, str):
+                words = [word.strip() for word in entry.split(',')
+                         ]  # or .split() if space-separated
+                all_words.extend(words)
+        return Counter(all_words).most_common(1)[0][0] if all_words else None
+
+    # Process bpi2 text entries
+    this_areas = this_period_df["bpi2"]
+    last_areas = last_period_df["bpi2"]
+
+    most_common_this = get_most_common_word(this_areas)
+    most_common_last = get_most_common_word(last_areas)
+
+    if most_common_this and most_common_last:
+        area_delta = f"was {most_common_last}" if most_common_this != most_common_last else "No change"
+    else:
+        area_delta = "N/A"
 
     # Display two metrics
     col1, col2 = st.columns(2)
     with col1:
         st.metric(
-            label="Average Pain (This Week)",
-            value=f"{mean_this_week:.2f}" if pd.notna(
-                mean_this_week) else "No data",
+            label=f"Average Pain ({range_option})",
+            value=f"{mean_this_period:.2f}" if pd.notna(
+                mean_this_period) else "No data",
             delta=f"{delta:+.2f}" if delta is not None else "N/A",
             delta_color="inverse",
             border=True
         )
     with col2:
-        # Most painful area this week compared to last week
         st.metric(
-            label="Most Painful Area (This Week)",
-            value=this_week_areas.value_counts().idxmax(
-            ) if not this_week_areas.empty else "No data",
-            delta="N/A",  # Placeholder for now
+            label=f"Most Painful Area ({range_option})",
+            value=most_common_this if most_common_this else "No data",
+            delta=area_delta,
             delta_color="off",
             border=True
         )
 
-    # --- Display pain over time ---
-    st.subheader("📈 Pain Over Time")
+        st.divider()
 
-    # bpi3, bpi4, bpi5 over time
-    # Prepare data for multi-line chart
+    # --- Display pain over time ---
+    st.subheader(f"📈 {period} Pain Overview")
+
+    # Define pain variables to plot (excluding bpi6)
     pain_col_labels = {
         "bpi3": "Worst",
         "bpi4": "Least",
-        "bpi5": "Average",
-        "bpi6": "Right Now"
+        "bpi5": "Average"
     }
-
     pain_cols = list(pain_col_labels.keys())
 
-    range_option = st.radio(
-        "Select time range:",
-        ["Last 7 days", "Last month", "Last year", "All time"],
-        horizontal=True
-    )
-
-    # Calculate date cutoff based on selection
     today = pd.Timestamp.today().normalize()
 
     if range_option == "Last 7 days":
@@ -137,76 +171,110 @@ def display_reports():
     elif range_option == "Last year":
         cutoff = today - pd.DateOffset(years=1)
     else:
-        cutoff = None  # "All time"
+        cutoff = None  # All time
 
-    # Filter df_filtered accordingly
-    if cutoff is not None:
-        df_chart = df_filtered[df_filtered["date"] >= cutoff]
-    else:
-        df_chart = df_filtered
+    df_chart = df_filtered[df_filtered["date"] >=
+                           cutoff] if cutoff is not None else df_filtered.copy()
 
-    # Melt the DataFrame for Altair - this is necessary for Altair to plot multiple lines
-    melted_df = df_chart[["date"] + pain_cols].melt(
-        id_vars="date", var_name="Pain Type", value_name="Score"
-    )
-    melted_df["Pain Type"] = melted_df["Pain Type"].map(
-        pain_col_labels)
+    if range_option == "Last 7 days":
+        df_chart["period"] = df_chart["date"]
+        agg_df = df_chart[["period"] + pain_cols].copy()
+    elif range_option == "Last month":
+        df_chart["period"] = df_chart["date"].dt.to_period(
+            "W").apply(lambda r: r.start_time)
+        agg_df = df_chart.groupby("period")[pain_cols].mean().reset_index()
+    else:  # Last year or All time
+        df_chart["period"] = df_chart["date"].dt.to_period(
+            "M").apply(lambda r: r.start_time)
+        agg_df = df_chart.groupby("period")[pain_cols].mean().reset_index()
 
-    # Create Altair line chart
-    line_chart = alt.Chart(melted_df).mark_line(point=True).encode(
-        x=alt.X("date:T", title="Date"),
-        y=alt.Y("Score:Q", title="Score",
-                scale=alt.Scale(domain=[0, 10])),
-        color=alt.Color("Pain Type:N", title="Pain"),
-        tooltip=["date", "Pain Type", "Score"]
+    # Melt after aggregation
+    melted_df = agg_df.melt(
+        id_vars="period", var_name="Pain Code", value_name="Score")
+    melted_df["Pain Type"] = melted_df["Pain Code"].map(pain_col_labels)
+
+    # Drop rows with missing values
+    melted_df = melted_df.dropna(subset=["Score", "Pain Type"])
+
+    # Define color and dash styles
+    color_scale = alt.Scale(domain=["Worst", "Least", "Average"],
+                            range=["red", "green", "#1f77b4"])
+    dash_scale = alt.Scale(domain=["Worst", "Least", "Average"],
+                           range=[[4, 4], [4, 4], [0]])
+
+    # Create Altair chart
+    line_chart = alt.Chart(melted_df).mark_line(point=(range_option == "Last 7 days")).encode(
+        x=alt.X("period:T", title="Date"),
+        y=alt.Y("Score:Q", title="Score", scale=alt.Scale(domain=[0, 10])),
+        color=alt.Color("Pain Type:N", title="Pain Type", scale=color_scale),
+        strokeDash=alt.StrokeDash("Pain Type:N", scale=dash_scale),
+        opacity=alt.condition(
+            alt.FieldOneOfPredicate(
+                field="Pain Type", oneOf=["Worst", "Least"]),
+            alt.value(0.8),
+            alt.value(1.0)
+        ),
+        tooltip=["period:T", "Pain Type:N", "Score:Q"]
     ).properties(
         width=700,
-        height=400,
-        title=""
+        height=400
     )
 
-    # Display the chart
     st.altair_chart(line_chart, use_container_width=True)
 
+    st.divider()
+
     # --- Display pain interference radar plot ---
-    st.subheader("Your Average Pain Interference")
+    st.subheader(f"Your {period} Pain Interference")
 
     interference_vars = ["bpi9a", "bpi9b", "bpi9c",
                          "bpi9d", "bpi9e", "bpi9f", "bpi9g"]
 
-    # Create readable labels
     labels = {
         "bpi9a": "General Activity",
         "bpi9b": "Mood",
-        "bpi9c": "Walking Ability",
+        "bpi9c": "Walking",
         "bpi9d": "Normal Work",
         "bpi9e": "Relations",
         "bpi9f": "Sleep",
         "bpi9g": "Enjoyment of Life"
     }
 
-    # Compute mean values
-    mean_scores = df_filtered[interference_vars].mean()
+    # Apply the same range_option filter
+    today = pd.Timestamp.today().normalize()
+    if range_option == "Last 7 days":
+        cutoff = today - pd.Timedelta(days=7)
+    elif range_option == "Last month":
+        cutoff = today - pd.DateOffset(months=1)
+    elif range_option == "Last year":
+        cutoff = today - pd.DateOffset(years=1)
+    else:
+        cutoff = None
 
-    # Prepare data for radar plot
+    df_interference = df_filtered[df_filtered["date"]
+                                  >= cutoff] if cutoff is not None else df_filtered
+
+    # Compute mean values
+    mean_scores = df_interference[interference_vars].mean()
+
     radar_df = pd.DataFrame({
         "Factor": [labels[var] for var in interference_vars],
         "Score": [mean_scores[var] for var in interference_vars]
     })
 
-    # Create radar plot with Plotly
-    fig = px.line_polar(radar_df, r="Score",
-                        theta="Factor", line_close=True)
+    fig = px.line_polar(
+        radar_df,
+        r="Score",
+        theta="Factor",
+        line_close=True
+    )
     fig.update_traces(fill='toself')
     fig.update_layout(
-        title="BPI Interference Radar Chart",
-        polar=dict(
-            radialaxis=dict(range=[0, 10], visible=True)
-        ),
-        showlegend=True
+        polar=dict(radialaxis=dict(range=[0, 10], visible=True)),
+        showlegend=False,
+        title=f"Pain Interference Averages ({range_option})"
     )
 
-    # Display the radar plot in a central column to avoid labels falling off
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
         st.plotly_chart(fig, use_container_width=True)
