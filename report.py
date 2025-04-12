@@ -18,7 +18,7 @@ def display_reports():
         return
 
     # Read CSV with date parsing
-    df = pd.read_csv(csv_file, parse_dates=["date"])
+    df = pd.read_csv(csv_file, sep=";", parse_dates=["date"])
     df["date"] = pd.to_datetime(df["date"], dayfirst=True, errors='coerce')
 
     # Sort by date (if not already)
@@ -29,10 +29,9 @@ def display_reports():
     #     "🗂 Logged Pain Data (I DON'T THINK THIS SHOULD BE AT THE TOP IN THE FINAL VERSION)")
     # st.dataframe(df, use_container_width=True)
 
-    st.divider()
     # Choose time range
     range_option = st.radio(
-        "Select time range",
+        "**Select time range**",
         ["Last 7 days", "Last month", "Last year", "All time"],
         horizontal=True
     )
@@ -61,8 +60,10 @@ def display_reports():
 
     df_filtered = df.copy()
 
+    st.divider()
+
     # --- Display metrics ---
-    st.subheader(f"📊 {period} Pain Comparison")
+    st.subheader(f"📊 {period} Comparison")
 
     # Average pain this week vs last week
     # Define current and previous week ranges
@@ -133,7 +134,7 @@ def display_reports():
     col1, col2 = st.columns(2)
     with col1:
         st.metric(
-            label=f"Average Pain ({range_option})",
+            label=f"Average Pain Score ({range_option})",
             value=f"{mean_this_period:.2f}" if pd.notna(
                 mean_this_period) else "No data",
             delta=f"{delta:+.2f}" if delta is not None else "N/A",
@@ -152,7 +153,7 @@ def display_reports():
         st.divider()
 
     # --- Display pain over time ---
-    st.subheader(f"📈 {period} Pain Overview")
+    st.subheader(f"📈 {period} Trends")
 
     # Define pain variables to plot (excluding bpi6)
     pain_col_labels = {
@@ -214,7 +215,11 @@ def display_reports():
             alt.value(0.8),
             alt.value(1.0)
         ),
-        tooltip=["period:T", "Pain Type:N", "Score:Q"]
+        tooltip=[
+            alt.Tooltip("period:T", title="Date"),
+            alt.Tooltip("Pain Type:N"),
+            alt.Tooltip("Score:Q", title="Score", format=".2f")
+        ]
     ).properties(
         width=700,
         height=400
@@ -224,8 +229,8 @@ def display_reports():
 
     st.divider()
 
-    # --- Display pain interference radar plot ---
-    st.subheader(f"Your {period} Pain Interference")
+    # --- Display pain interference bar plot ---
+    st.subheader(f"{period} Pain Interference")
 
     interference_vars = ["bpi9a", "bpi9b", "bpi9c",
                          "bpi9d", "bpi9e", "bpi9f", "bpi9g"]
@@ -254,27 +259,110 @@ def display_reports():
     df_interference = df_filtered[df_filtered["date"]
                                   >= cutoff] if cutoff is not None else df_filtered
 
-    # Compute mean values
+    # Compute mean interference scores
     mean_scores = df_interference[interference_vars].mean()
 
-    radar_df = pd.DataFrame({
+    # Build a DataFrame with friendly names and corresponding mean scores
+    interference_df = pd.DataFrame({
         "Factor": [labels[var] for var in interference_vars],
         "Score": [mean_scores[var] for var in interference_vars]
     })
 
-    fig = px.line_polar(
-        radar_df,
-        r="Score",
-        theta="Factor",
-        line_close=True
-    )
-    fig.update_traces(fill='toself')
-    fig.update_layout(
-        polar=dict(radialaxis=dict(range=[0, 10], visible=True)),
-        showlegend=False,
-        title=f"Pain Interference Averages ({range_option})"
+    # Create a horizontal bar chart
+    interference_bar_chart = alt.Chart(interference_df).mark_bar().encode(
+        y=alt.Y("Factor:N", title=""),
+        x=alt.X("Score:Q", title="Average Score",
+                scale=alt.Scale(domain=[0, 10])),
+        tooltip=[
+            alt.Tooltip("Factor:N", title="Interference with"),
+            alt.Tooltip("Score:Q", title="Average Score", format=".2f")
+        ]
+    ).properties(
+        width=700,
+        height=400
     )
 
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.plotly_chart(fig, use_container_width=True)
+    # Add text labels showing the score on each bar
+    interference_text = interference_bar_chart.mark_text(
+        align="left",
+        baseline="middle",
+        dx=3,  # Nudges text to the right
+        color="white"
+    ).encode(
+        text=alt.Text("Score:Q", format=".2f")
+    )
+
+    # Layer the text on top of the bars
+    interference_chart = interference_bar_chart + interference_text
+
+    st.altair_chart(interference_chart, use_container_width=True)
+
+    st.divider()
+
+    # --- Display Treatment Comparisons ---
+    st.subheader(f"💊 {period} Treatment Comparisons")
+
+    # Filter the DataFrame based on the cutoff (if provided)
+    df_bpi7 = df_filtered[df_filtered["date"] >=
+                          cutoff] if cutoff is not None else df_filtered.copy()
+
+    # Replace missing bpi7 values with a label "None"
+    df_bpi7["bpi7_clean"] = df_bpi7["bpi7"].fillna("None")
+
+    # Group by bpi7_clean and compute the mean bpi5
+    bpi7_mean = df_bpi7.groupby("bpi7_clean", dropna=False)[
+        "bpi5"].mean().reset_index()
+    bpi7_mean = bpi7_mean.rename(columns={"bpi5": "mean_bpi5"})
+
+    # Create Altair bar plot
+    bar_chart = alt.Chart(bpi7_mean).mark_bar().encode(
+        y=alt.Y("bpi7_clean:N", title=""),
+        x=alt.X("mean_bpi5:Q", title="Average Pain Score",
+                scale=alt.Scale(domain=[0, 10])),
+        tooltip=[
+            alt.Tooltip("bpi7_clean:N", title="Treatment"),
+            alt.Tooltip("mean_bpi5:Q",
+                        title="Average Pain Score", format=".2f")
+        ]
+    ).properties(
+        width=700,
+        height=400
+    )
+
+    text_for_bar_chart = bar_chart.mark_text(
+        align='left',
+        baseline='middle',
+        dx=3,  # Nudges text to right so it doesn't appear on top of the bar,
+        color="white"
+    ).encode(
+        text=alt.Text("mean_bpi5:Q", format=".2f")
+    )
+
+    treatment_chart = (bar_chart + text_for_bar_chart)
+
+    st.altair_chart(treatment_chart, use_container_width=True)
+
+    treatment_expander = st.expander("How to interpret treatment comparisons")
+    treatment_expander.write("""
+        This chart shows the average pain on days you used a treatment. It does *not* mean that the treatment causes more or less pain.
+        
+        For example, if you only take painkillers when your pain is high, the chart may show high pain on those days. This just means that you take painkillers only on bad days, not that they cause more pain.
+    """)
+
+    # Radar plot (commented out for now, not intuitive)
+    # fig = px.line_polar(
+    #     radar_df,
+    #     r="Score",
+    #     theta="Factor",
+    #     line_close=True
+    # )
+    # fig.update_traces(fill='toself')
+    # fig.update_layout(
+    #     polar=dict(radialaxis=dict(range=[0, 10], visible=True)),
+    #     showlegend=False,
+    #     title=f"Pain Interference Averages ({range_option})"
+    # )
+
+    # col1, col2, col3 = st.columns([1, 2, 1])
+    # with col2:
+    #     st.plotly_chart(fig, use_container_width=True)
