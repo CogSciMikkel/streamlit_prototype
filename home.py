@@ -46,11 +46,18 @@ def go_to_page(page):
 # Login/logout functions
 def authenticate(username, password):
     # Simple authentication for prototype
-    # Should check against database
     if username and password:
         st.session_state.username = username
         st.session_state.logged_in = True
-        st.session_state.page = "home"
+        
+        # Check if there was a page parameter before login
+        if "page" in st.query_params:
+            page = st.query_params["page"]
+            if page in ["home", "create_entry", "reports", "profile"]:
+                st.session_state.page = page
+        else:
+            st.session_state.page = "home"
+            
         st.rerun()
     else:
         st.error("Please enter both username and password")
@@ -142,37 +149,38 @@ def display_login():
             st.info("Account creation would be implemented here")
 
 # Bottom navigation bar
-
-
 def bottom_navigation():
+    # Add a special class to this container via markdown
+    st.markdown('<div class="nav-container"></div>', unsafe_allow_html=True)
+    
+    # Create three columns for the buttons within the container
+    cols = st.columns(3)
+    
+    # Current page for highlighting active button
     current_page = st.session_state.page
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        if st.button("Home", use_container_width=True,
-                     type="primary" if current_page == "home" else "secondary",
-                     key="nav_home"):  # Add unique key
+    
+    with cols[0]:
+        if st.button("🏠", key="home_btn", 
+                   use_container_width=True,
+                   type="primary" if current_page == "home" else "secondary"):
             st.session_state.page = "home"
             st.rerun()
-
-    with col2:
-        if st.button("Create Entry", use_container_width=True,
-                     type="primary" if current_page == "create_entry" else "secondary",
-                     key="nav_create"):  # Add unique key
+            
+    with cols[1]:
+        if st.button("➕", key="create_btn", 
+                   use_container_width=True,
+                   type="primary" if current_page == "create_entry" else "secondary"):
             st.session_state.page = "create_entry"
             st.rerun()
-
-    with col3:
-        if st.button("Reports", use_container_width=True,
-                     type="primary" if current_page == "reports" else "secondary",
-                     key="nav_reports"):  # Add unique key
+            
+    with cols[2]:
+        if st.button("📊", key="reports_btn", 
+                   use_container_width=True,
+                   type="primary" if current_page == "reports" else "secondary"):
             st.session_state.page = "reports"
             st.rerun()
 
 # Home page
-
-
 def display_home():
     col1, col2, col3 = st.columns([1, 2, 1])  # This will center the content
 
@@ -189,21 +197,22 @@ def display_home():
 def display_profile():
     st.write("Profile page coming soon")
 
-
 def main():
     load_css("styles.css")
 
-    query_params = st.query_params
-    if "page" in query_params:
-        page = query_params["page"]
-        if page in ["home", "create_entry", "reports", "profile"]:
-            st.session_state.page = page
+    # Initialize session state variables if they don't exist
+    if "page" not in st.session_state:
+        st.session_state.page = "home"
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
+    if "username" not in st.session_state:
+        st.session_state.username = ""
 
- # Display the appropriate page
+    # Check login status
     if not st.session_state.logged_in:
         display_login()
     else:
-        # Display the current page
+        # Display the current page based on session state
         if st.session_state.page == "home":
             display_home()
         elif st.session_state.page == "create_entry":
@@ -212,9 +221,9 @@ def main():
             display_reports()
         elif st.session_state.page == "profile":
             display_profile()
-
+        
+        # Add navigation bar at the bottom for logged-in users
         bottom_navigation()
-
 
 # Run the app
 if __name__ == "__main__":
