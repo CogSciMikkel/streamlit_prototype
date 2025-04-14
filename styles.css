@@ -3,6 +3,42 @@
     padding-bottom: 80px;
 }
 
+/* Fix main content padding */
+.stApp {
+    padding-bottom: 80px !important;
+}
+
+/* Bottom Navigation - Fixed Position */
+.nav-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: white;
+    border-top: 1px solid #ccc;
+    padding: 10px 0;
+    z-index: 9999;
+    box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+}
+
+.main .block-container {
+    padding-bottom: 80px !important;
+}
+
+.stButton button {
+    border-radius: 8px;
+    font-size: 20px;
+    padding: 10px 0;
+    background-color: white;
+    border: none;
+    box-shadow: none;
+}
+
+.stButton button[data-baseweb="button"][kind="primary"] {
+    background-color: #f0f0f0;
+    color: #333;
+}
+    
 /* Login form styling */
 .login-container {
     max-width: 500px;
@@ -13,39 +49,6 @@
 .login-header {
     text-align: center;
     margin-bottom: 30px;
-}
-
-/* Bottom Navigation Bar Styles */
-.bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background-color: #f1f1f1;
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding: 10px;
-    border-top: 1px solid #ddd;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-}
-
-.nav-button {
-    font-size: 16px;
-    cursor: pointer;
-    padding: 8px 16px;
-    background-color: #e0e0e0;
-    border-radius: 10px;
-    transition: background-color 0.3s ease;
-}
-
-.nav-button:hover {
-    background-color: #c0c0c0;
-}
-
-.active {
-    background-color: #a3a3a3;
-    color: white;
 }
 
 /* Calendar */
